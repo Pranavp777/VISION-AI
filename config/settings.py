@@ -38,7 +38,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         "DJANGO_ALLOWED_HOSTS",
-        "127.0.0.1,localhost,0.0.0.0,.onrender.com,.railway.app,.pythonanywhere.com,testserver",
+        "127.0.0.1,localhost,0.0.0.0,.onrender.com,.railway.app,.pythonanywhere.com,.pages.dev,.workers.dev,.trycloudflare.com,testserver",
     ).split(",")
     if host.strip()
 ]
@@ -47,7 +47,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
         "DJANGO_CSRF_TRUSTED_ORIGINS",
-        "http://127.0.0.1:8000,http://localhost:8000,https://*.onrender.com,https://*.railway.app",
+        "http://127.0.0.1:8000,http://localhost:8000,https://*.onrender.com,https://*.railway.app,https://*.pages.dev,https://*.workers.dev,https://*.trycloudflare.com",
     ).split(",")
     if origin.strip()
 ]

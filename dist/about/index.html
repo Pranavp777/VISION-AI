@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="PREDICTOR (VisionClassify) — Production-ready AI Computer Vision Image Classification Web Application powered by Django, TensorFlow/Keras, and OpenCV.">
+    <meta name="theme-color" content="#2563eb" id="metaThemeColor">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PREDICTOR">
+
+    <title>About PREDICTOR — VisionClassify AI Platform</title>
+
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/static/classifier/icons/favicon.svg">
+    <link rel="apple-touch-icon" href="/static/classifier/icons/icon-192.png">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/static/classifier/css/style.css">
+
+    <!-- Prevent Flash of Unstyled Theme (Detects system preference + localStorage) -->
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem('predictor_theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var activeTheme = savedTheme ? savedTheme : (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', activeTheme);
+                var metaTheme = document.getElementById('metaThemeColor');
+                if (metaTheme) {
+                    metaTheme.setAttribute('content', activeTheme === 'dark' ? '#0f172a' : '#2563eb');
+                }
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+    <!-- Accessibility Skip Link -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+    <!-- Offline Network Banner (Required by PWA Section 17) -->
+    <div id="offlineBanner" class="offline-banner" role="status" aria-live="polite" hidden>
+        <span class="offline-icon" aria-hidden="true">📡</span>
+        <span>You are offline. Image classification requires an internet connection.</span>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="site-header" role="banner">
+        <div class="container header-inner">
+            <!-- Brand Logo -->
+            <a href="/" class="brand-logo" aria-label="VISIONCLASSIFY PREDICTOR Home">
+                <span class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 36 36" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="36" height="36" rx="10" fill="url(#brandGrad)"/>
+                        <path d="M10 18C10 13.58 13.58 10 18 10C22.42 10 26 13.58 26 18C26 22.42 22.42 26 18 26C13.58 26 10 22.42 10 18Z" stroke="white" stroke-width="2.2"/>
+                        <circle cx="18" cy="18" r="3.5" fill="white"/>
+                        <path d="M7 13V10C7 8.34 8.34 7 10 7H13M23 7H26C27.66 7 29 8.34 29 10V13M29 23V26C29 27.66 27.66 29 26 29H23M13 29H10C8.34 29 7 27.66 7 26V23" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="brandGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#2563eb"/>
+                                <stop offset="1" stop-color="#4f46e5"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span class="brand-text">
+                    <span class="brand-primary">VISIONCLASSIFY</span>
+                    <span class="brand-badge">PREDICTOR</span>
+                </span>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="desktop-nav" aria-label="Primary Navigation">
+                <ul class="nav-list">
+                    <li>
+                        <a href="/" class="nav-link ">Home</a>
+                    </li>
+                    <li>
+                        <a href="/classifier/" class="nav-link ">Classifier</a>
+                    </li>
+                    <li>
+                        <a href="/history/" class="nav-link ">History</a>
+                    </li>
+                    <li>
+                        <a href="/about/" class="nav-link active">About</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Header Right Controls: Theme Toggle + Mobile Menu Trigger -->
+            <div class="header-actions">
+                <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Switch between Dark and Light mode" title="Toggle Dark/Light Mode">
+                    <span class="theme-icon-light" aria-hidden="true">☀</span>
+                    <span class="theme-icon-dark" aria-hidden="true">🌙</span>
+                    <span class="theme-label" id="themeToggleLabel">Light Mode</span>
+                </button>
+
+                <button type="button"
+                        id="mobileMenuBtn"
+                        class="mobile-menu-btn"
+                        aria-label="Open navigation menu"
+                        aria-expanded="false"
+                        aria-controls="mobileDrawer">
+                    <span class="hamburger-icon" aria-hidden="true">☰</span>
+                    <span class="menu-btn-text">Menu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Backdrop -->
+    <div id="drawerBackdrop" class="drawer-backdrop" hidden aria-hidden="true"></div>
+
+    <!-- Mobile Navigation Drawer -->
+    <aside id="mobileDrawer" class="mobile-drawer" aria-label="Mobile Navigation Drawer" aria-hidden="true">
+        <div class="drawer-header">
+            <span class="brand-primary">VISIONCLASSIFY</span>
+            <button type="button" id="closeDrawerBtn" class="drawer-close-btn" aria-label="Close navigation menu">
+                ✕ Close
+            </button>
+        </div>
+        <nav class="mobile-drawer-nav" aria-label="Mobile Menu Links">
+            <a href="/" class="drawer-link ">
+                <span aria-hidden="true">🏠</span> Home
+            </a>
+            <a href="/classifier/" class="drawer-link ">
+                <span aria-hidden="true">🤖</span> Classifier
+            </a>
+            <a href="/classifier/?mode=camera" class="drawer-link">
+                <span aria-hidden="true">📷</span> Use Camera
+            </a>
+            <a href="/history/" class="drawer-link ">
+                <span aria-hidden="true">🕒</span> History
+            </a>
+            <a href="/about/" class="drawer-link active">
+                <span aria-hidden="true">ℹ️</span> About
+            </a>
+        </nav>
+        <div class="drawer-footer">
+            <button type="button" id="mobileThemeToggleBtn" class="btn btn-outline btn-block">
+                <span id="mobileThemeText">🌙 Switch Theme</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Global Messages / Error Banners -->
+    <div class="container alerts-container" aria-live="polite">
+        
+        
+        <div id="globalToastContainer" class="toast-container"></div>
+    </div>
+
+    <!-- Main Page Content -->
+    <main id="mainContent" class="main-content" role="main">
+        
+<section class="section about-section" aria-labelledby="aboutHeading">
+    <div class="container">
+        <div class="section-header">
+            <h1 id="aboutHeading" class="section-title">About PREDICTOR (VisionClassify)</h1>
+            <p class="section-subtitle">
+                Production-ready AI Computer Vision Image Classification Web Application.
+            </p>
+        </div>
+
+        <div class="about-grid">
+            <article class="card about-card">
+                <h2>🧠 Machine Learning Pipeline</h2>
+                <p>
+                    PREDICTOR uses a singleton <strong>TensorFlow / Keras</strong> convolutional vision model stored in
+                    <code>ml/model.keras</code> paired with dynamic class definitions in <code>ml/class_names.json</code>.
+                </p>
+                <ul class="about-list">
+                    <li><strong>Single-load Architecture:</strong> The Keras model loads once per worker process for low-latency inference.</li>
+                    <li><strong>Pillow EXIF Orientation:</strong> Automatically corrects mobile portrait/landscape rotation tags.</li>
+                    <li><strong>OpenCV Preprocessing:</strong> Resizes and normalizes RGB tensors before neural network forward pass.</li>
+                    <li><strong>Top-K Confidence Calibration:</strong> Returns Top 3 &amp; Top 5 class probabilities and processing time.</li>
+                </ul>
+            </article>
+
+            <article class="card about-card">
+                <h2>📱 Mobile-First &amp; PWA Ready</h2>
+                <p>
+                    Engineered with a single responsive codebase that adapts across all 7 screen breakpoints from
+                    <strong>320px</strong> small phones up to <strong>1440px+</strong> widescreen monitors.
+                </p>
+                <ul class="about-list">
+                    <li><strong>Touch Targets:</strong> All interactive buttons meet or exceed <code>44px × 44px</code> accessibility standards.</li>
+                    <li><strong>Dual Camera Support:</strong> Supports live browser WebRTC camera streaming and native mobile <code>capture="environment"</code>.</li>
+                    <li><strong>Progressive Web App:</strong> Includes <code>manifest.json</code> and <code>service-worker.js</code> for offline shell caching and home-screen installation.</li>
+                    <li><strong>Dark &amp; Light Themes:</strong> Automatically detects OS preference and persists manual overrides in <code>localStorage</code>.</li>
+                </ul>
+            </article>
+
+            <article class="card about-card">
+                <h2>🔌 REST API Endpoint</h2>
+                <p>Integrate PREDICTOR directly into mobile apps, scripts, or microservices:</p>
+                <pre class="code-block"><code>POST /api/classify/
+Content-Type: multipart/form-data
+Form Field: image=&lt;file&gt;
+
+Response (200 OK):
+{
+  "success": true,
+  "prediction": "cat",
+  "confidence": 0.9642,
+  "top_predictions": [
+    {
+      "class": "cat",
+      "confidence": 0.9642
+    }
+  ]
+}</code></pre>
+            </article>
+
+            <article class="card about-card">
+                <h2>🔒 Security &amp; Deployment</h2>
+                <ul class="about-list">
+                    <li>CSRF protection on all state-changing requests.</li>
+                    <li>File size cap (10 MB), extension whitelist, MIME check, and Pillow binary header verification.</li>
+                    <li>UUID-randomized safe upload filenames preventing path traversal.</li>
+                    <li>Ready for <strong>PostgreSQL</strong>, <strong>Gunicorn</strong>, and <strong>WhiteNoise</strong> on Render, Railway, AWS, GCP, Azure, or VPS.</li>
+                </ul>
+            </article>
+        </div>
+    </div>
+</section>
+
+    </main>
+
+    <!-- Site Footer -->
+    <footer class="site-footer" role="contentinfo">
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <strong>VISIONCLASSIFY · PREDICTOR</strong>
+                <p>AI-Powered Computer Vision Image Classification Platform built with Django, TensorFlow/Keras, OpenCV &amp; Pillow.</p>
+            </div>
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/classifier/">Classifier</a>
+                <a href="/history/">History</a>
+                <a href="/about/">About</a>
+                <a href="/api/classify/">REST API</a>
+                <button type="button" id="installPwaBtn" class="pwa-install-btn" hidden>📲 Install App</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main Application JavaScript -->
+    <script src="/static/classifier/js/app.js" defer></script>
+    
+</body>
+</html>

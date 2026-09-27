@@ -1,0 +1,5 @@
+/api/sample-image/*
+  Content-Type: image/jpeg
+/service-worker.js
+  Service-Worker-Allowed: /
+  Cache-Control: no-cache

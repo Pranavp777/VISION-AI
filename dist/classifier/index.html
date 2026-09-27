@@ -1,0 +1,434 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="PREDICTOR (VisionClassify) — Production-ready AI Computer Vision Image Classification Web Application powered by Django, TensorFlow/Keras, and OpenCV.">
+    <meta name="theme-color" content="#2563eb" id="metaThemeColor">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PREDICTOR">
+
+    <title>Classify Image — PREDICTOR | VisionClassify</title>
+
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/static/classifier/icons/favicon.svg">
+    <link rel="apple-touch-icon" href="/static/classifier/icons/icon-192.png">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/static/classifier/css/style.css">
+
+    <!-- Prevent Flash of Unstyled Theme (Detects system preference + localStorage) -->
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem('predictor_theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var activeTheme = savedTheme ? savedTheme : (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', activeTheme);
+                var metaTheme = document.getElementById('metaThemeColor');
+                if (metaTheme) {
+                    metaTheme.setAttribute('content', activeTheme === 'dark' ? '#0f172a' : '#2563eb');
+                }
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+    <!-- Accessibility Skip Link -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+    <!-- Offline Network Banner (Required by PWA Section 17) -->
+    <div id="offlineBanner" class="offline-banner" role="status" aria-live="polite" hidden>
+        <span class="offline-icon" aria-hidden="true">📡</span>
+        <span>You are offline. Image classification requires an internet connection.</span>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="site-header" role="banner">
+        <div class="container header-inner">
+            <!-- Brand Logo -->
+            <a href="/" class="brand-logo" aria-label="VISIONCLASSIFY PREDICTOR Home">
+                <span class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 36 36" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="36" height="36" rx="10" fill="url(#brandGrad)"/>
+                        <path d="M10 18C10 13.58 13.58 10 18 10C22.42 10 26 13.58 26 18C26 22.42 22.42 26 18 26C13.58 26 10 22.42 10 18Z" stroke="white" stroke-width="2.2"/>
+                        <circle cx="18" cy="18" r="3.5" fill="white"/>
+                        <path d="M7 13V10C7 8.34 8.34 7 10 7H13M23 7H26C27.66 7 29 8.34 29 10V13M29 23V26C29 27.66 27.66 29 26 29H23M13 29H10C8.34 29 7 27.66 7 26V23" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="brandGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#2563eb"/>
+                                <stop offset="1" stop-color="#4f46e5"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span class="brand-text">
+                    <span class="brand-primary">VISIONCLASSIFY</span>
+                    <span class="brand-badge">PREDICTOR</span>
+                </span>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="desktop-nav" aria-label="Primary Navigation">
+                <ul class="nav-list">
+                    <li>
+                        <a href="/" class="nav-link ">Home</a>
+                    </li>
+                    <li>
+                        <a href="/classifier/" class="nav-link active">Classifier</a>
+                    </li>
+                    <li>
+                        <a href="/history/" class="nav-link ">History</a>
+                    </li>
+                    <li>
+                        <a href="/about/" class="nav-link ">About</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Header Right Controls: Theme Toggle + Mobile Menu Trigger -->
+            <div class="header-actions">
+                <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Switch between Dark and Light mode" title="Toggle Dark/Light Mode">
+                    <span class="theme-icon-light" aria-hidden="true">☀</span>
+                    <span class="theme-icon-dark" aria-hidden="true">🌙</span>
+                    <span class="theme-label" id="themeToggleLabel">Light Mode</span>
+                </button>
+
+                <button type="button"
+                        id="mobileMenuBtn"
+                        class="mobile-menu-btn"
+                        aria-label="Open navigation menu"
+                        aria-expanded="false"
+                        aria-controls="mobileDrawer">
+                    <span class="hamburger-icon" aria-hidden="true">☰</span>
+                    <span class="menu-btn-text">Menu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Backdrop -->
+    <div id="drawerBackdrop" class="drawer-backdrop" hidden aria-hidden="true"></div>
+
+    <!-- Mobile Navigation Drawer -->
+    <aside id="mobileDrawer" class="mobile-drawer" aria-label="Mobile Navigation Drawer" aria-hidden="true">
+        <div class="drawer-header">
+            <span class="brand-primary">VISIONCLASSIFY</span>
+            <button type="button" id="closeDrawerBtn" class="drawer-close-btn" aria-label="Close navigation menu">
+                ✕ Close
+            </button>
+        </div>
+        <nav class="mobile-drawer-nav" aria-label="Mobile Menu Links">
+            <a href="/" class="drawer-link ">
+                <span aria-hidden="true">🏠</span> Home
+            </a>
+            <a href="/classifier/" class="drawer-link active">
+                <span aria-hidden="true">🤖</span> Classifier
+            </a>
+            <a href="/classifier/?mode=camera" class="drawer-link">
+                <span aria-hidden="true">📷</span> Use Camera
+            </a>
+            <a href="/history/" class="drawer-link ">
+                <span aria-hidden="true">🕒</span> History
+            </a>
+            <a href="/about/" class="drawer-link ">
+                <span aria-hidden="true">ℹ️</span> About
+            </a>
+        </nav>
+        <div class="drawer-footer">
+            <button type="button" id="mobileThemeToggleBtn" class="btn btn-outline btn-block">
+                <span id="mobileThemeText">🌙 Switch Theme</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Global Messages / Error Banners -->
+    <div class="container alerts-container" aria-live="polite">
+        
+        
+        <div id="globalToastContainer" class="toast-container"></div>
+    </div>
+
+    <!-- Main Page Content -->
+    <main id="mainContent" class="main-content" role="main">
+        
+<section class="section classifier-section" aria-labelledby="classifierHeading">
+    <div class="container">
+        <div class="section-header">
+            <h1 id="classifierHeading" class="section-title">AI Image Classifier</h1>
+            <p class="section-subtitle">
+                Take a photo, choose from your gallery, or drag and drop an image below.
+            </p>
+        </div>
+
+        <!-- Inline Error Alert Box (Hidden by default) -->
+        <div id="classifierErrorBox" class="alert alert-error" role="alert" hidden>
+            <span id="classifierErrorText"></span>
+            <button type="button" class="alert-close" aria-label="Dismiss error" id="dismissErrorBtn">✕</button>
+        </div>
+
+        <!-- STEP 1: Upload / Capture Card -->
+        <div id="uploadStepCard" class="card classifier-card">
+            <form id="classifyForm"
+                  action="/classifier/"
+                  method="post"
+                  enctype="multipart/form-data"
+                  novalidate
+                  data-api-url="/api/classify/"
+                  data-initial-mode="upload"
+                  data-max-mb="10">
+                <input type="hidden" name="csrfmiddlewaretoken" value="oMnwphEw3RoHuK9iD7LODaJpfjguJQNh24FnRD3iAU89dDdP9juUMMo9L8V9s4AZ">
+
+                <!-- Standard File Input (Gallery / File Manager / Desktop) -->
+                <input type="file"
+                       id="imageInput"
+                       name="image"
+                       accept="image/*"
+                       class="sr-only-input"
+                       aria-label="Choose image from device storage or gallery">
+
+                <!-- Dedicated Mobile Camera Input with capture="environment" (Required by Section 6) -->
+                <input type="file"
+                       id="mobileCameraInput"
+                       accept="image/*"
+                       capture="environment"
+                       class="sr-only-input"
+                       aria-label="Capture photo using mobile environment camera">
+
+                <!-- Drag and Drop Zone -->
+                <div id="dropZone"
+                     class="drop-zone"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Upload area. Click, tap, or drag and drop an image here.">
+                    <div class="drop-zone-icon" aria-hidden="true">🖼️</div>
+                    <h2 class="drop-zone-title">Upload or Capture an Image</h2>
+                    <p class="drop-zone-desc">
+                        Drag &amp; drop an image here on desktop, or use the touch-friendly buttons below.
+                    </p>
+                    <p class="drop-zone-hint">
+                        Supported: JPG, PNG, WEBP, BMP, GIF · Max size: 10 MB
+                    </p>
+
+                    <!-- Touch-Friendly Action Buttons (Min 44x44px) -->
+                    <div class="upload-actions-group">
+                        <button type="button" id="chooseGalleryBtn" class="btn btn-primary btn-lg">
+                            <span aria-hidden="true">📁</span>
+                            <span>Choose From Gallery / Upload</span>
+                        </button>
+
+                        <button type="button" id="useCameraBtn" class="btn btn-secondary btn-lg">
+                            <span aria-hidden="true">📷</span>
+                            <span>Use Camera</span>
+                        </button>
+
+                        <button type="button" id="takePhotoMobileBtn" class="btn btn-outline btn-lg mobile-only-btn">
+                            <span aria-hidden="true">🤳</span>
+                            <span>Take Photo (Native)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Sample Images for Instant 1-Tap Testing -->
+                <div class="sample-bar">
+                    <span class="sample-label">No photo handy? Try a sample:</span>
+                    <div class="sample-chips">
+                        <button type="button" class="sample-chip" data-sample-url="/api/sample-image/cat/" data-sample-name="cat_sample.jpg">🐱 Cat</button>
+                        <button type="button" class="sample-chip" data-sample-url="/api/sample-image/dog/" data-sample-name="dog_sample.jpg">🐶 Dog</button>
+                        <button type="button" class="sample-chip" data-sample-url="/api/sample-image/automobile/" data-sample-name="automobile_sample.jpg">🚗 Car</button>
+                        <button type="button" class="sample-chip" data-sample-url="/api/sample-image/airplane/" data-sample-name="airplane_sample.jpg">✈️ Airplane</button>
+                        <button type="button" class="sample-chip" data-sample-url="/api/sample-image/flower/" data-sample-name="flower_sample.jpg">🌸 Flower</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- STEP 1B: Interactive Live Camera Panel (WebRTC with graceful fallback) -->
+        <div id="cameraPanel" class="card camera-card" hidden aria-labelledby="cameraHeading">
+            <div class="camera-header">
+                <h2 id="cameraHeading" class="card-title">📷 Live Camera Capture</h2>
+                <button type="button" id="closeCameraBtn" class="btn btn-outline btn-sm" aria-label="Close camera">
+                    ✕ Close Camera
+                </button>
+            </div>
+
+            <div class="camera-viewport-wrapper">
+                <video id="cameraVideo" class="camera-video" autoplay playsinline muted></video>
+                <canvas id="cameraCanvas" hidden></canvas>
+            </div>
+
+            <div class="camera-controls">
+                <button type="button" id="switchCameraBtn" class="btn btn-outline" aria-label="Switch front or rear camera">
+                    🔄 Flip Camera
+                </button>
+                <button type="button" id="capturePhotoBtn" class="btn btn-primary btn-lg">
+                    📸 Capture Image
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Responsive Image Preview (1-column on mobile, 2-column on desktop) -->
+        <div id="previewCard" class="card preview-card" hidden aria-labelledby="previewHeading">
+            <div class="preview-grid">
+                <!-- Left Column: Responsive Image Preview -->
+                <div class="preview-image-col">
+                    <div class="preview-image-frame">
+                        <img id="previewImage"
+                             src=""
+                             alt="Selected image preview for AI classification"
+                             class="responsive-preview-img">
+                    </div>
+                </div>
+
+                <!-- Right Column: Image Information & Action Controls -->
+                <div class="preview-info-col">
+                    <span class="step-badge">Ready for Analysis</span>
+                    <h2 id="previewHeading" class="card-title">Image Preview</h2>
+
+                    <dl class="image-meta-list">
+                        <div class="meta-row">
+                            <dt>Image Name</dt>
+                            <dd id="previewFileName">—</dd>
+                        </div>
+                        <div class="meta-row">
+                            <dt>Image Size</dt>
+                            <dd id="previewFileSize">—</dd>
+                        </div>
+                        <div class="meta-row">
+                            <dt>Dimensions</dt>
+                            <dd id="previewDimensions">—</dd>
+                        </div>
+                        <div class="meta-row">
+                            <dt>Format</dt>
+                            <dd id="previewFormat">—</dd>
+                        </div>
+                    </dl>
+
+                    <div class="preview-actions">
+                        <button type="button" id="classifyImageBtn" class="btn btn-primary btn-lg btn-block">
+                            <span aria-hidden="true">✨</span>
+                            <span>Classify Image</span>
+                        </button>
+
+                        <div class="preview-secondary-actions">
+                            <button type="button" id="changeImageBtn" class="btn btn-outline btn-block">
+                                📁 Change Image
+                            </button>
+                            <button type="button" id="retakeCameraBtn" class="btn btn-outline btn-block" hidden>
+                                📷 Retake Photo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Responsive Loading Screen (Section 9) -->
+        <div id="loadingCard" class="card loading-card" role="status" aria-live="polite" hidden>
+            <div class="ai-loader" aria-hidden="true">
+                <div class="ai-loader-ring"></div>
+                <div class="ai-loader-core">🤖</div>
+            </div>
+            <h2 class="loading-title">AI is analyzing your image...</h2>
+            <p class="loading-subtitle">
+                Running TensorFlow/Keras neural network inference &amp; OpenCV preprocessing
+            </p>
+            <p class="loading-timer" id="loadingTimerText">0.0s elapsed</p>
+        </div>
+
+        <!-- STEP 4: Responsive Classification Result Card (Sections 10 & 11) -->
+        <!-- Desktop: Two-column (IMAGE | PREDICTION). Mobile: Single-column stack -->
+        <div id="resultCard" class="card result-card" hidden aria-labelledby="resultHeading">
+            <div class="result-grid">
+                <!-- Left Column: Classified Image -->
+                <div class="result-image-col">
+                    <div class="result-image-frame">
+                        <img id="resultImage"
+                             src=""
+                             alt="Classified image"
+                             class="responsive-preview-img">
+                    </div>
+                </div>
+
+                <!-- Right Column: Prediction Details -->
+                <div class="result-details-col">
+                    <div class="result-header-meta">
+                        <span class="step-badge badge-success">✓ Analysis Complete</span>
+                        <span class="processing-time-pill" id="resultProcessingTimePill">
+                            ⏱ Processing Time: <strong id="resultProcessingTime">0.00</strong> seconds
+                        </span>
+                    </div>
+
+                    <p class="result-label" id="resultHeading">Prediction</p>
+
+                    <div class="primary-prediction-box">
+                        <span id="resultEmoji" class="result-emoji" aria-hidden="true">🐱</span>
+                        <div class="primary-prediction-text">
+                            <h2 id="resultPredictedClass" class="result-class-name">Cat</h2>
+                            <p class="result-confidence-highlight">
+                                <span id="resultConfidencePct">96.42%</span> Confidence
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Top 3 / Top 5 Predictions Toggle -->
+                    <div class="top-predictions-section">
+                        <div class="top-predictions-header">
+                            <h3 class="top-predictions-title">Top Predictions</h3>
+                            <div class="top-k-switch" role="group" aria-label="Toggle Top 3 or Top 5 predictions">
+                                <button type="button" class="top-k-btn active" data-topk="3">Top 3</button>
+                                <button type="button" class="top-k-btn" data-topk="5">Top 5</button>
+                            </div>
+                        </div>
+
+                        <ul id="topPredictionsList" class="top-predictions-list" aria-label="Top predictions breakdown">
+                            <!-- Populated dynamically via JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="result-actions">
+                        <button type="button" id="classifyAnotherBtn" class="btn btn-primary btn-lg">
+                            🔄 Classify Another
+                        </button>
+                        <a id="resultPermalinkBtn" href="/history/" class="btn btn-outline btn-lg">
+                            🔗 Permalink Result
+                        </a>
+                        <a href="/history/" class="btn btn-outline btn-lg">
+                            🕒 View History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    </main>
+
+    <!-- Site Footer -->
+    <footer class="site-footer" role="contentinfo">
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <strong>VISIONCLASSIFY · PREDICTOR</strong>
+                <p>AI-Powered Computer Vision Image Classification Platform built with Django, TensorFlow/Keras, OpenCV &amp; Pillow.</p>
+            </div>
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/classifier/">Classifier</a>
+                <a href="/history/">History</a>
+                <a href="/about/">About</a>
+                <a href="/api/classify/">REST API</a>
+                <button type="button" id="installPwaBtn" class="pwa-install-btn" hidden>📲 Install App</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main Application JavaScript -->
+    <script src="/static/classifier/js/app.js" defer></script>
+    
+</body>
+</html>

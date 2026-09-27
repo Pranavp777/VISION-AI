@@ -1,0 +1,10 @@
+{
+  "name": "predictor-visionclassify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PREDICTOR (VisionClassify) — AI Image Classification Web Application",
+  "scripts": {
+    "build": "echo \"Using pre-built dist/ directory for Cloudflare Pages\"",
+    "deploy": "npx wrangler pages deploy dist --project-name predictor-visionclassify"
+  }
+}

@@ -1,0 +1,364 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="PREDICTOR (VisionClassify) — Production-ready AI Computer Vision Image Classification Web Application powered by Django, TensorFlow/Keras, and OpenCV.">
+    <meta name="theme-color" content="#2563eb" id="metaThemeColor">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PREDICTOR">
+
+    <title>VISIONCLASSIFY — PREDICTOR AI Image Classification</title>
+
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/static/classifier/icons/favicon.svg">
+    <link rel="apple-touch-icon" href="/static/classifier/icons/icon-192.png">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/static/classifier/css/style.css">
+
+    <!-- Prevent Flash of Unstyled Theme (Detects system preference + localStorage) -->
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem('predictor_theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var activeTheme = savedTheme ? savedTheme : (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', activeTheme);
+                var metaTheme = document.getElementById('metaThemeColor');
+                if (metaTheme) {
+                    metaTheme.setAttribute('content', activeTheme === 'dark' ? '#0f172a' : '#2563eb');
+                }
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+    <!-- Accessibility Skip Link -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+    <!-- Offline Network Banner (Required by PWA Section 17) -->
+    <div id="offlineBanner" class="offline-banner" role="status" aria-live="polite" hidden>
+        <span class="offline-icon" aria-hidden="true">📡</span>
+        <span>You are offline. Image classification requires an internet connection.</span>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="site-header" role="banner">
+        <div class="container header-inner">
+            <!-- Brand Logo -->
+            <a href="/" class="brand-logo" aria-label="VISIONCLASSIFY PREDICTOR Home">
+                <span class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 36 36" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="36" height="36" rx="10" fill="url(#brandGrad)"/>
+                        <path d="M10 18C10 13.58 13.58 10 18 10C22.42 10 26 13.58 26 18C26 22.42 22.42 26 18 26C13.58 26 10 22.42 10 18Z" stroke="white" stroke-width="2.2"/>
+                        <circle cx="18" cy="18" r="3.5" fill="white"/>
+                        <path d="M7 13V10C7 8.34 8.34 7 10 7H13M23 7H26C27.66 7 29 8.34 29 10V13M29 23V26C29 27.66 27.66 29 26 29H23M13 29H10C8.34 29 7 27.66 7 26V23" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="brandGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#2563eb"/>
+                                <stop offset="1" stop-color="#4f46e5"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span class="brand-text">
+                    <span class="brand-primary">VISIONCLASSIFY</span>
+                    <span class="brand-badge">PREDICTOR</span>
+                </span>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="desktop-nav" aria-label="Primary Navigation">
+                <ul class="nav-list">
+                    <li>
+                        <a href="/" class="nav-link active">Home</a>
+                    </li>
+                    <li>
+                        <a href="/classifier/" class="nav-link ">Classifier</a>
+                    </li>
+                    <li>
+                        <a href="/history/" class="nav-link ">History</a>
+                    </li>
+                    <li>
+                        <a href="/about/" class="nav-link ">About</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Header Right Controls: Theme Toggle + Mobile Menu Trigger -->
+            <div class="header-actions">
+                <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Switch between Dark and Light mode" title="Toggle Dark/Light Mode">
+                    <span class="theme-icon-light" aria-hidden="true">☀</span>
+                    <span class="theme-icon-dark" aria-hidden="true">🌙</span>
+                    <span class="theme-label" id="themeToggleLabel">Light Mode</span>
+                </button>
+
+                <button type="button"
+                        id="mobileMenuBtn"
+                        class="mobile-menu-btn"
+                        aria-label="Open navigation menu"
+                        aria-expanded="false"
+                        aria-controls="mobileDrawer">
+                    <span class="hamburger-icon" aria-hidden="true">☰</span>
+                    <span class="menu-btn-text">Menu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Backdrop -->
+    <div id="drawerBackdrop" class="drawer-backdrop" hidden aria-hidden="true"></div>
+
+    <!-- Mobile Navigation Drawer -->
+    <aside id="mobileDrawer" class="mobile-drawer" aria-label="Mobile Navigation Drawer" aria-hidden="true">
+        <div class="drawer-header">
+            <span class="brand-primary">VISIONCLASSIFY</span>
+            <button type="button" id="closeDrawerBtn" class="drawer-close-btn" aria-label="Close navigation menu">
+                ✕ Close
+            </button>
+        </div>
+        <nav class="mobile-drawer-nav" aria-label="Mobile Menu Links">
+            <a href="/" class="drawer-link active">
+                <span aria-hidden="true">🏠</span> Home
+            </a>
+            <a href="/classifier/" class="drawer-link ">
+                <span aria-hidden="true">🤖</span> Classifier
+            </a>
+            <a href="/classifier/?mode=camera" class="drawer-link">
+                <span aria-hidden="true">📷</span> Use Camera
+            </a>
+            <a href="/history/" class="drawer-link ">
+                <span aria-hidden="true">🕒</span> History
+            </a>
+            <a href="/about/" class="drawer-link ">
+                <span aria-hidden="true">ℹ️</span> About
+            </a>
+        </nav>
+        <div class="drawer-footer">
+            <button type="button" id="mobileThemeToggleBtn" class="btn btn-outline btn-block">
+                <span id="mobileThemeText">🌙 Switch Theme</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Global Messages / Error Banners -->
+    <div class="container alerts-container" aria-live="polite">
+        
+        
+        <div id="globalToastContainer" class="toast-container"></div>
+    </div>
+
+    <!-- Main Page Content -->
+    <main id="mainContent" class="main-content" role="main">
+        
+<!-- Mobile-First Hero Section -->
+<section class="hero-section" aria-labelledby="heroHeading">
+    <div class="container hero-container">
+        <div class="hero-badge">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            <span>VISIONCLASSIFY · PREDICTOR AI ENGINE</span>
+        </div>
+
+        <h1 id="heroHeading" class="hero-title">
+            AI Image <span class="text-gradient">Classification</span>
+        </h1>
+
+        <p class="hero-subtitle">
+            Upload an image and let AI identify it.
+        </p>
+
+        <!-- Primary Touch-Friendly CTA Buttons (Min 44x44px) -->
+        <div class="hero-cta-group">
+            <a href="/classifier/" class="btn btn-primary btn-lg hero-btn">
+                <span aria-hidden="true">📁</span>
+                <span>Upload Image</span>
+            </a>
+            <a href="/classifier/?mode=camera" class="btn btn-secondary btn-lg hero-btn">
+                <span aria-hidden="true">📷</span>
+                <span>Use Camera</span>
+            </a>
+        </div>
+
+        <!-- Features Strip (Responsive Pills for Mobile & Desktop) -->
+        <div class="hero-features-strip" aria-label="Platform Highlights">
+            <div class="feature-pill">
+                <span aria-hidden="true">🧠</span>
+                <span>AI Classification</span>
+            </div>
+            <span class="feature-divider" aria-hidden="true">|</span>
+            <div class="feature-pill">
+                <span aria-hidden="true">⚡</span>
+                <span>Fast</span>
+            </div>
+            <span class="feature-divider" aria-hidden="true">|</span>
+            <div class="feature-pill">
+                <span aria-hidden="true">🔒</span>
+                <span>Secure</span>
+            </div>
+            <span class="feature-divider" aria-hidden="true">|</span>
+            <div class="feature-pill">
+                <span aria-hidden="true">📱</span>
+                <span>Responsive</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature Cards Grid -->
+<section class="section features-section" aria-labelledby="featuresHeading">
+    <div class="container">
+        <div class="section-header">
+            <h2 id="featuresHeading" class="section-title">Designed for Every Device</h2>
+            <p class="section-subtitle">Seamless computer vision inference across phones, tablets, laptops, and desktops.</p>
+        </div>
+
+        <div class="features-grid">
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">🤖</div>
+                <h3>Deep Learning Accuracy</h3>
+                <p>Powered by a singleton TensorFlow/Keras neural network with OpenCV &amp; Pillow preprocessing for calibrated top-K predictions.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">📸</div>
+                <h3>Instant Camera Capture</h3>
+                <p>Capture photos directly from your mobile or laptop camera in the browser or pick from your photo gallery with a single tap.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">⚡</div>
+                <h3>Fast &amp; Lightweight</h3>
+                <p>Zero browser ML bloat. All heavy TensorFlow inference runs on the Django backend so mobile devices stay fast and responsive.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">🛡️</div>
+                <h3>Secure &amp; Private</h3>
+                <p>Strict MIME validation, Pillow header verification, CSRF protection, file size enforcement, and randomized safe filenames.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- Supported Categories Preview -->
+
+<section class="section classes-section" aria-labelledby="classesHeading">
+    <div class="container">
+        <div class="section-header">
+            <h2 id="classesHeading" class="section-title">Supported Recognition Classes</h2>
+            <p class="section-subtitle">Dynamically loaded from <code>ml/class_names.json</code> (15 active categories).</p>
+        </div>
+        <div class="class-chips-wrapper">
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">✈️</span>
+                    <span>Airplane</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🚗</span>
+                    <span>Automobile</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🐦</span>
+                    <span>Bird</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🐱</span>
+                    <span>Cat</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🦌</span>
+                    <span>Deer</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🐶</span>
+                    <span>Dog</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🦊</span>
+                    <span>Fox</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🐸</span>
+                    <span>Frog</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🐴</span>
+                    <span>Horse</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🚢</span>
+                    <span>Ship</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🚚</span>
+                    <span>Truck</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🌸</span>
+                    <span>Flower</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🧑</span>
+                    <span>Person</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">🍕</span>
+                    <span>Food</span>
+                </span>
+            
+                <span class="class-chip">
+                    <span aria-hidden="true">💻</span>
+                    <span>Electronics</span>
+                </span>
+            
+        </div>
+    </div>
+</section>
+
+
+<!-- Recent Classifications Section -->
+
+
+    </main>
+
+    <!-- Site Footer -->
+    <footer class="site-footer" role="contentinfo">
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <strong>VISIONCLASSIFY · PREDICTOR</strong>
+                <p>AI-Powered Computer Vision Image Classification Platform built with Django, TensorFlow/Keras, OpenCV &amp; Pillow.</p>
+            </div>
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/classifier/">Classifier</a>
+                <a href="/history/">History</a>
+                <a href="/about/">About</a>
+                <a href="/api/classify/">REST API</a>
+                <button type="button" id="installPwaBtn" class="pwa-install-btn" hidden>📲 Install App</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main Application JavaScript -->
+    <script src="/static/classifier/js/app.js" defer></script>
+    
+</body>
+</html>
