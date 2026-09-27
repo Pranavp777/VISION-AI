@@ -1,0 +1,255 @@
+{% extends "classifier/base.html" %}
+
+{% block content %}
+<section class="section classifier-section" aria-labelledby="classifierHeading">
+    <div class="container">
+        <div class="section-header">
+            <h1 id="classifierHeading" class="section-title">AI Image Classifier</h1>
+            <p class="section-subtitle">
+                Take a photo, choose from your gallery, or drag and drop an image below.
+            </p>
+        </div>
+
+        <!-- Inline Error Alert Box (Hidden by default) -->
+        <div id="classifierErrorBox" class="alert alert-error" role="alert" hidden>
+            <span id="classifierErrorText"></span>
+            <button type="button" class="alert-close" aria-label="Dismiss error" id="dismissErrorBtn">✕</button>
+        </div>
+
+        <!-- STEP 1: Upload / Capture Card -->
+        <div id="uploadStepCard" class="card classifier-card">
+            <form id="classifyForm"
+                  action="{% url 'classifier:classifier' %}"
+                  method="post"
+                  enctype="multipart/form-data"
+                  novalidate
+                  data-api-url="{% url 'classifier:api_classify' %}"
+                  data-initial-mode="{{ initial_mode }}"
+                  data-max-mb="{{ max_upload_mb }}">
+                {% csrf_token %}
+
+                <!-- Standard File Input (Gallery / File Manager / Desktop) -->
+                <input type="file"
+                       id="imageInput"
+                       name="image"
+                       accept="image/*"
+                       class="sr-only-input"
+                       aria-label="Choose image from device storage or gallery">
+
+                <!-- Dedicated Mobile Camera Input with capture="environment" (Required by Section 6) -->
+                <input type="file"
+                       id="mobileCameraInput"
+                       accept="image/*"
+                       capture="environment"
+                       class="sr-only-input"
+                       aria-label="Capture photo using mobile environment camera">
+
+                <!-- Drag and Drop Zone -->
+                <div id="dropZone"
+                     class="drop-zone"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Upload area. Click, tap, or drag and drop an image here.">
+                    <div class="drop-zone-icon" aria-hidden="true">🖼️</div>
+                    <h2 class="drop-zone-title">Upload or Capture an Image</h2>
+                    <p class="drop-zone-desc">
+                        Drag &amp; drop an image here on desktop, or use the touch-friendly buttons below.
+                    </p>
+                    <p class="drop-zone-hint">
+                        Supported: JPG, PNG, WEBP, BMP, GIF · Max size: {{ max_upload_mb }} MB
+                    </p>
+
+                    <!-- Touch-Friendly Action Buttons (Min 44x44px) -->
+                    <div class="upload-actions-group">
+                        <button type="button" id="chooseGalleryBtn" class="btn btn-primary btn-lg">
+                            <span aria-hidden="true">📁</span>
+                            <span>Choose From Gallery / Upload</span>
+                        </button>
+
+                        <button type="button" id="useCameraBtn" class="btn btn-secondary btn-lg">
+                            <span aria-hidden="true">📷</span>
+                            <span>Use Camera</span>
+                        </button>
+
+                        <button type="button" id="takePhotoMobileBtn" class="btn btn-outline btn-lg mobile-only-btn">
+                            <span aria-hidden="true">🤳</span>
+                            <span>Take Photo (Native)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Sample Images for Instant 1-Tap Testing -->
+                <div class="sample-bar">
+                    <span class="sample-label">No photo handy? Try a sample:</span>
+                    <div class="sample-chips">
+                        <button type="button" class="sample-chip" data-sample-url="{% url 'classifier:sample_image' 'cat' %}" data-sample-name="cat_sample.jpg">🐱 Cat</button>
+                        <button type="button" class="sample-chip" data-sample-url="{% url 'classifier:sample_image' 'dog' %}" data-sample-name="dog_sample.jpg">🐶 Dog</button>
+                        <button type="button" class="sample-chip" data-sample-url="{% url 'classifier:sample_image' 'automobile' %}" data-sample-name="automobile_sample.jpg">🚗 Car</button>
+                        <button type="button" class="sample-chip" data-sample-url="{% url 'classifier:sample_image' 'airplane' %}" data-sample-name="airplane_sample.jpg">✈️ Airplane</button>
+                        <button type="button" class="sample-chip" data-sample-url="{% url 'classifier:sample_image' 'flower' %}" data-sample-name="flower_sample.jpg">🌸 Flower</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- STEP 1B: Interactive Live Camera Panel (WebRTC with graceful fallback) -->
+        <div id="cameraPanel" class="card camera-card" hidden aria-labelledby="cameraHeading">
+            <div class="camera-header">
+                <h2 id="cameraHeading" class="card-title">📷 Live Camera Capture</h2>
+                <button type="button" id="closeCameraBtn" class="btn btn-outline btn-sm" aria-label="Close camera">
+                    ✕ Close Camera
+                </button>
+            </div>
+
+            <div class="camera-viewport-wrapper">
+                <video id="cameraVideo" class="camera-video" autoplay playsinline muted></video>
+                <canvas id="cameraCanvas" hidden></canvas>
+            </div>
+
+            <div class="camera-controls">
+                <button type="button" id="switchCameraBtn" class="btn btn-outline" aria-label="Switch front or rear camera">
+                    🔄 Flip Camera
+                </button>
+                <button type="button" id="capturePhotoBtn" class="btn btn-primary btn-lg">
+                    📸 Capture Image
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Responsive Image Preview (1-column on mobile, 2-column on desktop) -->
+        <div id="previewCard" class="card preview-card" hidden aria-labelledby="previewHeading">
+            <div class="preview-grid">
+                <!-- Left Column: Responsive Image Preview -->
+                <div class="preview-image-col">
+                    <div class="preview-image-frame">
+                        <img id="previewImage"
+                             src=""
+                             alt="Selected image preview for AI classification"
+                             class="responsive-preview-img">
+                    </div>
+                </div>
+
+                <!-- Right Column: Image Information & Action Controls -->
+                <div class="preview-info-col">
+                    <span class="step-badge">Ready for Analysis</span>
+                    <h2 id="previewHeading" class="card-title">Image Preview</h2>
+
+                    <dl class="image-meta-list">
+                        <div class="meta-row">
+                            <dt>Image Name</dt>
+                            <dd id="previewFileName">—</dd>
+                        </div>
+                        <div class="meta-row">
+                            <dt>Image Size</dt>
+                            <dd id="previewFileSize">—</dd>
+                        </div>
+                        <div class="meta-row">
+                            <dt>Dimensions</dt>
+                            <dd id="previewDimensions">—</dd>
+                        </div>
+                        <div class="meta-row">
+                            <dt>Format</dt>
+                            <dd id="previewFormat">—</dd>
+                        </div>
+                    </dl>
+
+                    <div class="preview-actions">
+                        <button type="button" id="classifyImageBtn" class="btn btn-primary btn-lg btn-block">
+                            <span aria-hidden="true">✨</span>
+                            <span>Classify Image</span>
+                        </button>
+
+                        <div class="preview-secondary-actions">
+                            <button type="button" id="changeImageBtn" class="btn btn-outline btn-block">
+                                📁 Change Image
+                            </button>
+                            <button type="button" id="retakeCameraBtn" class="btn btn-outline btn-block" hidden>
+                                📷 Retake Photo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Responsive Loading Screen (Section 9) -->
+        <div id="loadingCard" class="card loading-card" role="status" aria-live="polite" hidden>
+            <div class="ai-loader" aria-hidden="true">
+                <div class="ai-loader-ring"></div>
+                <div class="ai-loader-core">🤖</div>
+            </div>
+            <h2 class="loading-title">AI is analyzing your image...</h2>
+            <p class="loading-subtitle">
+                Running TensorFlow/Keras neural network inference &amp; OpenCV preprocessing
+            </p>
+            <p class="loading-timer" id="loadingTimerText">0.0s elapsed</p>
+        </div>
+
+        <!-- STEP 4: Responsive Classification Result Card (Sections 10 & 11) -->
+        <!-- Desktop: Two-column (IMAGE | PREDICTION). Mobile: Single-column stack -->
+        <div id="resultCard" class="card result-card" hidden aria-labelledby="resultHeading">
+            <div class="result-grid">
+                <!-- Left Column: Classified Image -->
+                <div class="result-image-col">
+                    <div class="result-image-frame">
+                        <img id="resultImage"
+                             src=""
+                             alt="Classified image"
+                             class="responsive-preview-img">
+                    </div>
+                </div>
+
+                <!-- Right Column: Prediction Details -->
+                <div class="result-details-col">
+                    <div class="result-header-meta">
+                        <span class="step-badge badge-success">✓ Analysis Complete</span>
+                        <span class="processing-time-pill" id="resultProcessingTimePill">
+                            ⏱ Processing Time: <strong id="resultProcessingTime">0.00</strong> seconds
+                        </span>
+                    </div>
+
+                    <p class="result-label" id="resultHeading">Prediction</p>
+
+                    <div class="primary-prediction-box">
+                        <span id="resultEmoji" class="result-emoji" aria-hidden="true">🐱</span>
+                        <div class="primary-prediction-text">
+                            <h2 id="resultPredictedClass" class="result-class-name">Cat</h2>
+                            <p class="result-confidence-highlight">
+                                <span id="resultConfidencePct">96.42%</span> Confidence
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Top 3 / Top 5 Predictions Toggle -->
+                    <div class="top-predictions-section">
+                        <div class="top-predictions-header">
+                            <h3 class="top-predictions-title">Top Predictions</h3>
+                            <div class="top-k-switch" role="group" aria-label="Toggle Top 3 or Top 5 predictions">
+                                <button type="button" class="top-k-btn active" data-topk="3">Top 3</button>
+                                <button type="button" class="top-k-btn" data-topk="5">Top 5</button>
+                            </div>
+                        </div>
+
+                        <ul id="topPredictionsList" class="top-predictions-list" aria-label="Top predictions breakdown">
+                            <!-- Populated dynamically via JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="result-actions">
+                        <button type="button" id="classifyAnotherBtn" class="btn btn-primary btn-lg">
+                            🔄 Classify Another
+                        </button>
+                        <a id="resultPermalinkBtn" href="{% url 'classifier:history' %}" class="btn btn-outline btn-lg">
+                            🔗 Permalink Result
+                        </a>
+                        <a href="{% url 'classifier:history' %}" class="btn btn-outline btn-lg">
+                            🕒 View History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

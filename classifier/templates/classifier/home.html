@@ -1,0 +1,150 @@
+{% extends "classifier/base.html" %}
+
+{% block content %}
+<!-- Mobile-First Hero Section -->
+<section class="hero-section" aria-labelledby="heroHeading">
+    <div class="container hero-container">
+        <div class="hero-badge">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            <span>VISIONCLASSIFY · PREDICTOR AI ENGINE</span>
+        </div>
+
+        <h1 id="heroHeading" class="hero-title">
+            AI Image <span class="text-gradient">Classification</span>
+        </h1>
+
+        <p class="hero-subtitle">
+            Upload an image and let AI identify it.
+        </p>
+
+        <!-- Primary Touch-Friendly CTA Buttons (Min 44x44px) -->
+        <div class="hero-cta-group">
+            <a href="{% url 'classifier:classifier' %}" class="btn btn-primary btn-lg hero-btn">
+                <span aria-hidden="true">📁</span>
+                <span>Upload Image</span>
+            </a>
+            <a href="{% url 'classifier:classifier' %}?mode=camera" class="btn btn-secondary btn-lg hero-btn">
+                <span aria-hidden="true">📷</span>
+                <span>Use Camera</span>
+            </a>
+        </div>
+
+        <!-- Features Strip (Responsive Pills for Mobile & Desktop) -->
+        <div class="hero-features-strip" aria-label="Platform Highlights">
+            <div class="feature-pill">
+                <span aria-hidden="true">🧠</span>
+                <span>AI Classification</span>
+            </div>
+            <span class="feature-divider" aria-hidden="true">|</span>
+            <div class="feature-pill">
+                <span aria-hidden="true">⚡</span>
+                <span>Fast</span>
+            </div>
+            <span class="feature-divider" aria-hidden="true">|</span>
+            <div class="feature-pill">
+                <span aria-hidden="true">🔒</span>
+                <span>Secure</span>
+            </div>
+            <span class="feature-divider" aria-hidden="true">|</span>
+            <div class="feature-pill">
+                <span aria-hidden="true">📱</span>
+                <span>Responsive</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature Cards Grid -->
+<section class="section features-section" aria-labelledby="featuresHeading">
+    <div class="container">
+        <div class="section-header">
+            <h2 id="featuresHeading" class="section-title">Designed for Every Device</h2>
+            <p class="section-subtitle">Seamless computer vision inference across phones, tablets, laptops, and desktops.</p>
+        </div>
+
+        <div class="features-grid">
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">🤖</div>
+                <h3>Deep Learning Accuracy</h3>
+                <p>Powered by a singleton TensorFlow/Keras neural network with OpenCV &amp; Pillow preprocessing for calibrated top-K predictions.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">📸</div>
+                <h3>Instant Camera Capture</h3>
+                <p>Capture photos directly from your mobile or laptop camera in the browser or pick from your photo gallery with a single tap.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">⚡</div>
+                <h3>Fast &amp; Lightweight</h3>
+                <p>Zero browser ML bloat. All heavy TensorFlow inference runs on the Django backend so mobile devices stay fast and responsive.</p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-box" aria-hidden="true">🛡️</div>
+                <h3>Secure &amp; Private</h3>
+                <p>Strict MIME validation, Pillow header verification, CSRF protection, file size enforcement, and randomized safe filenames.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- Supported Categories Preview -->
+{% if model_info.classes_enriched %}
+<section class="section classes-section" aria-labelledby="classesHeading">
+    <div class="container">
+        <div class="section-header">
+            <h2 id="classesHeading" class="section-title">Supported Recognition Classes</h2>
+            <p class="section-subtitle">Dynamically loaded from <code>ml/class_names.json</code> ({{ model_info.num_classes }} active categories).</p>
+        </div>
+        <div class="class-chips-wrapper">
+            {% for item in model_info.classes_enriched %}
+                <span class="class-chip">
+                    <span aria-hidden="true">{{ item.emoji }}</span>
+                    <span>{{ item.display_name }}</span>
+                </span>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Recent Classifications Section -->
+{% if recent_items %}
+<section class="section recent-section" aria-labelledby="recentHeading">
+    <div class="container">
+        <div class="section-header section-header-row">
+            <div>
+                <h2 id="recentHeading" class="section-title">Recent Classifications</h2>
+                <p class="section-subtitle">Latest images analyzed by PREDICTOR.</p>
+            </div>
+            <a href="{% url 'classifier:history' %}" class="btn btn-outline">View Full History →</a>
+        </div>
+
+        <div class="recent-grid">
+            {% for item in recent_items %}
+                <a href="{% url 'classifier:result' item.pk %}" class="recent-card">
+                    <div class="recent-img-wrap">
+                        <img src="{{ item.image.url }}"
+                             alt="Classified as {{ item.predicted_class }}"
+                             loading="lazy"
+                             decoding="async">
+                    </div>
+                    <div class="recent-card-body">
+                        <div class="recent-pred-title">
+                            <span>{{ item.emoji }} {{ item.predicted_class|title }}</span>
+                            <span class="badge-confidence">{{ item.confidence_percentage }}%</span>
+                        </div>
+                        <div class="recent-meta">
+                            <span>⏱ {{ item.classification_time }}s</span>
+                            <span>{{ item.created_at|date:"d M Y" }}</span>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

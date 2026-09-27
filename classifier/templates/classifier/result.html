@@ -1,0 +1,90 @@
+{% extends "classifier/base.html" %}
+
+{% block content %}
+<section class="section result-page-section" aria-labelledby="resultPageHeading">
+    <div class="container">
+        <div class="section-header section-header-row">
+            <div>
+                <h1 id="resultPageHeading" class="section-title">Classification Result</h1>
+                <p class="section-subtitle">
+                    Analyzed on {{ record.created_at|date:"d M Y, H:i" }} · File: {{ record.original_filename|default:"Image" }}
+                </p>
+            </div>
+            <a href="{% url 'classifier:classifier' %}" class="btn btn-primary">
+                🔄 Classify Another
+            </a>
+        </div>
+
+        <!-- Responsive Result Card: 2-Column on Desktop | 1-Column on Mobile (Section 11) -->
+        <div class="card result-card">
+            <div class="result-grid">
+                <!-- Left Column: IMAGE -->
+                <div class="result-image-col">
+                    <div class="result-image-frame">
+                        <img src="{{ record.image.url }}"
+                             alt="Classified as {{ record.predicted_class }}"
+                             class="responsive-preview-img">
+                    </div>
+                </div>
+
+                <!-- Right Column: PREDICTION -->
+                <div class="result-details-col">
+                    <div class="result-header-meta">
+                        <span class="step-badge badge-success">✓ Saved in History #{{ record.pk }}</span>
+                        <span class="processing-time-pill">
+                            ⏱ Processing Time: <strong>{{ record.classification_time }}</strong> seconds
+                        </span>
+                    </div>
+
+                    <p class="result-label">Prediction</p>
+
+                    <div class="primary-prediction-box">
+                        <span class="result-emoji" aria-hidden="true">{{ record.emoji }}</span>
+                        <div class="primary-prediction-text">
+                            <h2 class="result-class-name">{{ record.predicted_class|title }}</h2>
+                            <p class="result-confidence-highlight">
+                                {{ record.confidence_percentage }}% Confidence
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Top Predictions Breakdown -->
+                    <div class="top-predictions-section">
+                        <div class="top-predictions-header">
+                            <h3 class="top-predictions-title">Top Predictions</h3>
+                        </div>
+
+                        <ul class="top-predictions-list">
+                            {% for item in top_5_predictions %}
+                                <li class="top-prediction-item">
+                                    <div class="top-pred-row">
+                                        <span class="top-pred-name">
+                                            <span aria-hidden="true">{{ item.emoji|default:"🔍" }}</span>
+                                            {{ item.class|title }}
+                                        </span>
+                                        <span class="top-pred-pct">{{ item.percentage }}%</span>
+                                    </div>
+                                    <div class="progress-track" role="progressbar" aria-valuenow="{{ item.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="progress-fill {% if forloop.first %}progress-primary{% endif %}"
+                                             style="width: {{ item.percentage }}%;"></div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Result Footer Actions -->
+                    <div class="result-actions">
+                        <a href="{% url 'classifier:classifier' %}" class="btn btn-primary btn-lg">
+                            🔄 Classify Another
+                        </a>
+                        <a href="{% url 'classifier:history' %}" class="btn btn-outline btn-lg">
+                            🕒 Back to History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

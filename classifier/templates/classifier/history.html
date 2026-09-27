@@ -1,0 +1,213 @@
+{% extends "classifier/base.html" %}
+
+{% block content %}
+<section class="section history-section" aria-labelledby="historyHeading">
+    <div class="container">
+        <div class="section-header section-header-row">
+            <div>
+                <h1 id="historyHeading" class="section-title">Classification History</h1>
+                <p class="section-subtitle">
+                    Total classifications recorded: <strong id="historyTotalCount">{{ total_count }}</strong>
+                </p>
+            </div>
+            <div class="history-top-actions">
+                <a href="{% url 'classifier:classifier' %}" class="btn btn-primary">
+                    ➕ New Classification
+                </a>
+                {% if history_items %}
+                <form action="{% url 'classifier:clear_history' %}" method="post" onsubmit="return confirm('Clear all classification history?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger-outline">
+                        🗑️ Clear All
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <form method="get" action="{% url 'classifier:history' %}" class="card filter-bar" role="search">
+            <div class="filter-group">
+                <label for="searchInput" class="sr-only">Search predicted class</label>
+                <input type="search"
+                       id="searchInput"
+                       name="q"
+                       value="{{ search_query }}"
+                       placeholder="Search by predicted class (e.g. cat, dog, car)..."
+                       class="form-input">
+            </div>
+
+            <div class="filter-group">
+                <label for="classFilterSelect" class="sr-only">Filter by class</label>
+                <select id="classFilterSelect" name="class_filter" class="form-select">
+                    <option value="">All Classes</option>
+                    {% for cls_name in distinct_classes %}
+                        <option value="{{ cls_name }}" {% if class_filter == cls_name %}selected{% endif %}>
+                            {{ cls_name|title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-secondary">Filter</button>
+                {% if search_query or class_filter %}
+                    <a href="{% url 'classifier:history' %}" class="btn btn-outline">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if history_items %}
+            <!-- ============================================================
+                 DESKTOP VIEW: Accessible Data Table (Shown on >= 768px)
+                 ============================================================ -->
+            <div class="card history-table-container desktop-history-table">
+                <table class="history-table" aria-label="Classification History Table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Image</th>
+                            <th scope="col">Prediction</th>
+                            <th scope="col">Confidence</th>
+                            <th scope="col">Processing Time</th>
+                            <th scope="col">Date</th>
+                            <th scope="col" class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in history_items %}
+                            <tr id="history-row-{{ item.pk }}">
+                                <td>
+                                    <a href="{% url 'classifier:result' item.pk %}" class="table-thumb-link">
+                                        <img src="{{ item.image.url }}"
+                                             alt="{{ item.predicted_class }}"
+                                             class="table-thumb"
+                                             loading="lazy"
+                                             decoding="async">
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'classifier:result' item.pk %}" class="table-class-link">
+                                        <span aria-hidden="true">{{ item.emoji }}</span>
+                                        <strong>{{ item.predicted_class|title }}</strong>
+                                    </a>
+                                    {% if item.original_filename %}
+                                        <div class="table-subtext">{{ item.original_filename }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge-confidence">{{ item.confidence_percentage }}%</span>
+                                </td>
+                                <td>{{ item.classification_time }}s</td>
+                                <td>{{ item.created_at|date:"d M Y, H:i" }}</td>
+                                <td class="text-right">
+                                    <div class="table-action-btns">
+                                        <a href="{% url 'classifier:result' item.pk %}" class="btn btn-outline btn-sm">
+                                            View
+                                        </a>
+                                        <form action="{% url 'classifier:delete_history' item.pk %}"
+                                              method="post"
+                                              class="delete-history-form"
+                                              data-record-id="{{ item.pk }}">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-danger-outline btn-sm"
+                                                    aria-label="Delete {{ item.predicted_class }} classification from {{ item.created_at|date:'d M Y' }}">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ============================================================
+                 MOBILE VIEW: Responsive Cards (Automatically shown on < 768px)
+                 No horizontal table scrolling required! (Section 15)
+                 ============================================================ -->
+            <div class="mobile-history-cards">
+                {% for item in history_items %}
+                    <article class="card mobile-history-card" id="history-card-{{ item.pk }}">
+                        <a href="{% url 'classifier:result' item.pk %}" class="mobile-card-image-wrap">
+                            <img src="{{ item.image.url }}"
+                                 alt="Classified as {{ item.predicted_class }}"
+                                 loading="lazy"
+                                 decoding="async">
+                        </a>
+                        <div class="mobile-card-body">
+                            <p class="mobile-card-line">
+                                <strong>Prediction:</strong>
+                                <span>{{ item.emoji }} {{ item.predicted_class|title }}</span>
+                            </p>
+                            <p class="mobile-card-line">
+                                <strong>Confidence:</strong>
+                                <span class="badge-confidence">{{ item.confidence_percentage }}%</span>
+                            </p>
+                            <p class="mobile-card-line">
+                                <strong>Processing Time:</strong>
+                                <span>{{ item.classification_time }}s</span>
+                            </p>
+                            <p class="mobile-card-line">
+                                <strong>Date:</strong>
+                                <span>{{ item.created_at|date:"d M Y" }}</span>
+                            </p>
+
+                            <div class="mobile-card-actions">
+                                <a href="{% url 'classifier:result' item.pk %}" class="btn btn-outline">
+                                    View Result
+                                </a>
+                                <form action="{% url 'classifier:delete_history' item.pk %}"
+                                      method="post"
+                                      class="delete-history-form"
+                                      data-record-id="{{ item.pk }}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger-outline btn-block">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination Controls -->
+            {% if page_obj.has_other_pages %}
+                <nav class="pagination-nav" aria-label="History pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&class_filter={{ class_filter }}" class="btn btn-outline">
+                            ← Previous
+                        </a>
+                    {% endif %}
+                    <span class="pagination-info">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&class_filter={{ class_filter }}" class="btn btn-outline">
+                            Next →
+                        </a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="card empty-state-card">
+                <div class="empty-state-icon" aria-hidden="true">🗂️</div>
+                <h2>No Classification History Found</h2>
+                <p>Upload an image or capture a photo with your camera to see AI predictions recorded here.</p>
+                <div class="empty-state-actions">
+                    <a href="{% url 'classifier:classifier' %}" class="btn btn-primary btn-lg">
+                        📁 Upload Image
+                    </a>
+                    <a href="{% url 'classifier:classifier' %}?mode=camera" class="btn btn-secondary btn-lg">
+                        📷 Use Camera
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

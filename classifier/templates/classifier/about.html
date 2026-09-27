@@ -1,0 +1,75 @@
+{% extends "classifier/base.html" %}
+
+{% block content %}
+<section class="section about-section" aria-labelledby="aboutHeading">
+    <div class="container">
+        <div class="section-header">
+            <h1 id="aboutHeading" class="section-title">About PREDICTOR (VisionClassify)</h1>
+            <p class="section-subtitle">
+                Production-ready AI Computer Vision Image Classification Web Application.
+            </p>
+        </div>
+
+        <div class="about-grid">
+            <article class="card about-card">
+                <h2>🧠 Machine Learning Pipeline</h2>
+                <p>
+                    PREDICTOR uses a singleton <strong>TensorFlow / Keras</strong> convolutional vision model stored in
+                    <code>ml/model.keras</code> paired with dynamic class definitions in <code>ml/class_names.json</code>.
+                </p>
+                <ul class="about-list">
+                    <li><strong>Single-load Architecture:</strong> The Keras model loads once per worker process for low-latency inference.</li>
+                    <li><strong>Pillow EXIF Orientation:</strong> Automatically corrects mobile portrait/landscape rotation tags.</li>
+                    <li><strong>OpenCV Preprocessing:</strong> Resizes and normalizes RGB tensors before neural network forward pass.</li>
+                    <li><strong>Top-K Confidence Calibration:</strong> Returns Top 3 &amp; Top 5 class probabilities and processing time.</li>
+                </ul>
+            </article>
+
+            <article class="card about-card">
+                <h2>📱 Mobile-First &amp; PWA Ready</h2>
+                <p>
+                    Engineered with a single responsive codebase that adapts across all 7 screen breakpoints from
+                    <strong>320px</strong> small phones up to <strong>1440px+</strong> widescreen monitors.
+                </p>
+                <ul class="about-list">
+                    <li><strong>Touch Targets:</strong> All interactive buttons meet or exceed <code>44px × 44px</code> accessibility standards.</li>
+                    <li><strong>Dual Camera Support:</strong> Supports live browser WebRTC camera streaming and native mobile <code>capture="environment"</code>.</li>
+                    <li><strong>Progressive Web App:</strong> Includes <code>manifest.json</code> and <code>service-worker.js</code> for offline shell caching and home-screen installation.</li>
+                    <li><strong>Dark &amp; Light Themes:</strong> Automatically detects OS preference and persists manual overrides in <code>localStorage</code>.</li>
+                </ul>
+            </article>
+
+            <article class="card about-card">
+                <h2>🔌 REST API Endpoint</h2>
+                <p>Integrate PREDICTOR directly into mobile apps, scripts, or microservices:</p>
+                <pre class="code-block"><code>POST /api/classify/
+Content-Type: multipart/form-data
+Form Field: image=&lt;file&gt;
+
+Response (200 OK):
+{
+  "success": true,
+  "prediction": "cat",
+  "confidence": 0.9642,
+  "top_predictions": [
+    {
+      "class": "cat",
+      "confidence": 0.9642
+    }
+  ]
+}</code></pre>
+            </article>
+
+            <article class="card about-card">
+                <h2>🔒 Security &amp; Deployment</h2>
+                <ul class="about-list">
+                    <li>CSRF protection on all state-changing requests.</li>
+                    <li>File size cap (10 MB), extension whitelist, MIME check, and Pillow binary header verification.</li>
+                    <li>UUID-randomized safe upload filenames preventing path traversal.</li>
+                    <li>Ready for <strong>PostgreSQL</strong>, <strong>Gunicorn</strong>, and <strong>WhiteNoise</strong> on Render, Railway, AWS, GCP, Azure, or VPS.</li>
+                </ul>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+# Python & Virtual Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Django & Databases
+db.sqlite3
+*.log
+.env
+static/
+media/uploads/*
+!media/uploads/.gitkeep
+!static/.gitkeep
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
