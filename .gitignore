@@ -10,10 +10,10 @@ env/
 db.sqlite3
 *.log
 .env
-static/
-media/uploads/*
-!media/uploads/.gitkeep
-!static/.gitkeep
+/static/
+/media/uploads/*
+!/media/uploads/.gitkeep
+!/static/.gitkeep
 
 # IDE & OS
 .vscode/

@@ -1,0 +1,52 @@
+{
+  "name": "PREDICTOR — VisionClassify AI Image Classification",
+  "short_name": "PREDICTOR",
+  "description": "AI-powered Computer Vision Image Classification Web Application built with Django, TensorFlow/Keras, and OpenCV.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1120",
+  "theme_color": "#2563eb",
+  "categories": ["utilities", "productivity", "education", "photo"],
+  "icons": [
+    {
+      "src": "/static/classifier/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/classifier/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/classifier/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Upload & Classify",
+      "short_name": "Classify",
+      "description": "Upload an image for AI classification",
+      "url": "/classifier/"
+    },
+    {
+      "name": "Use Camera",
+      "short_name": "Camera",
+      "description": "Capture a photo directly with your camera",
+      "url": "/classifier/?mode=camera"
+    },
+    {
+      "name": "View History",
+      "short_name": "History",
+      "description": "Browse previous AI classifications",
+      "url": "/history/"
+    }
+  ]
+}
