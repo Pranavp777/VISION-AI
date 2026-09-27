@@ -601,6 +601,33 @@
                 currentTopPredictions = data.top_predictions || [];
                 renderTopPredictionsList(currentTopPredictions, activeTopK);
 
+                // Persist classification to localStorage so /history/ and /admin/ stay synced on Cloudflare Edge
+                try {
+                    const reader = new FileReader();
+                    reader.onload = function (ev) {
+                        const stored = JSON.parse(localStorage.getItem("predictor_cloud_history") || "[]");
+                        stored.unshift({
+                            id: data.id || Date.now(),
+                            predicted_class: data.predicted_class || data.prediction || "unknown",
+                            display_name: data.display_name || data.prediction || "Unknown",
+                            emoji: data.emoji || "🔍",
+                            confidence_percentage: parseFloat(confPct),
+                            classification_time: Number(data.classification_time || 0.04).toFixed(3),
+                            original_filename: selectedFile ? selectedFile.name : "capture.jpg",
+                            created_at: new Date().toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            }),
+                            image_data: ev.target.result,
+                        });
+                        localStorage.setItem("predictor_cloud_history", JSON.stringify(stored.slice(0, 30)));
+                    };
+                    reader.readAsDataURL(selectedFile);
+                } catch (storageErr) {}
+
                 resultCard.hidden = false;
                 resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
             } catch (err) {
@@ -627,7 +654,65 @@
     }
 
     // =========================================================================
-    // 7. AJAX HISTORY DELETION (Section 15)
+    // 7. SYNC CLOUDFLARE LOCALSTORAGE HISTORY ON /history/ PAGE
+    // =========================================================================
+    const historyTableBody = document.querySelector(".history-table tbody");
+    const mobileHistoryCards = document.querySelector(".mobile-history-cards");
+    if (historyTableBody && mobileHistoryCards && window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost") {
+        try {
+            const cloudItems = JSON.parse(localStorage.getItem("predictor_cloud_history") || "[]");
+            if (cloudItems.length > 0) {
+                const countEl = document.getElementById("historyTotalCount");
+                if (countEl) {
+                    countEl.textContent = String(parseInt(countEl.textContent || "0", 10) + cloudItems.length);
+                }
+                cloudItems.forEach(function (item) {
+                    const tr = document.createElement("tr");
+                    tr.id = "history-row-" + item.id;
+                    tr.innerHTML =
+                        '<td><img src="' + (item.image_data || "") + '" alt="' + item.display_name + '" class="table-thumb"></td>' +
+                        '<td><span aria-hidden="true">' + item.emoji + "</span> <strong>" + item.display_name + '</strong><div class="table-subtext">' + item.original_filename + "</div></td>" +
+                        '<td><span class="badge-confidence">' + item.confidence_percentage + "%</span></td>" +
+                        "<td>" + item.classification_time + "s</td>" +
+                        "<td>" + item.created_at + "</td>" +
+                        '<td class="text-right"><button type="button" class="btn btn-danger-outline btn-sm cloud-del-btn" data-id="' + item.id + '">Delete</button></td>';
+                    historyTableBody.insertBefore(tr, historyTableBody.firstChild);
+
+                    const card = document.createElement("article");
+                    card.className = "card mobile-history-card";
+                    card.id = "history-card-" + item.id;
+                    card.innerHTML =
+                        '<div class="mobile-card-image-wrap"><img src="' + (item.image_data || "") + '" alt="' + item.display_name + '"></div>' +
+                        '<div class="mobile-card-body">' +
+                        '<p class="mobile-card-line"><strong>Prediction:</strong><span>' + item.emoji + " " + item.display_name + "</span></p>" +
+                        '<p class="mobile-card-line"><strong>Confidence:</strong><span class="badge-confidence">' + item.confidence_percentage + "%</span></p>" +
+                        '<p class="mobile-card-line"><strong>Processing Time:</strong><span>' + item.classification_time + "s</span></p>" +
+                        '<p class="mobile-card-line"><strong>Date:</strong><span>' + item.created_at + "</span></p>" +
+                        '<div class="mobile-card-actions"><button type="button" class="btn btn-danger-outline btn-block cloud-del-btn" data-id="' + item.id + '">Delete</button></div>' +
+                        "</div>";
+                    mobileHistoryCards.insertBefore(card, mobileHistoryCards.firstChild);
+                });
+
+                document.querySelectorAll(".cloud-del-btn").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        const delId = String(btn.dataset.id);
+                        const current = JSON.parse(localStorage.getItem("predictor_cloud_history") || "[]");
+                        const filtered = current.filter(function (x) {
+                            return String(x.id) !== delId;
+                        });
+                        localStorage.setItem("predictor_cloud_history", JSON.stringify(filtered));
+                        const r = document.getElementById("history-row-" + delId);
+                        const c = document.getElementById("history-card-" + delId);
+                        if (r) r.remove();
+                        if (c) c.remove();
+                    });
+                });
+            }
+        } catch (e) {}
+    }
+
+    // =========================================================================
+    // 8. AJAX HISTORY DELETION (Section 15)
     // =========================================================================
     const deleteForms = document.querySelectorAll(".delete-history-form");
     deleteForms.forEach(function (form) {

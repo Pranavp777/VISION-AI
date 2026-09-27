@@ -190,6 +190,32 @@ export default {
             }
         }
 
+        if (
+            (url.pathname === "/api/admin/login" || url.pathname === "/api/admin/login/") &&
+            request.method === "POST"
+        ) {
+            try {
+                const body = await request.json();
+                const expectedUser = (env && env.ADMIN_USERNAME) || "admin";
+                const expectedPass = (env && env.ADMIN_PASSWORD) || "predictor123";
+                if (body.username === expectedUser && body.password === expectedPass) {
+                    return new Response(JSON.stringify({ success: true, user: expectedUser }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+                return new Response(
+                    JSON.stringify({ success: false, error: "Invalid username or password" }),
+                    { status: 401, headers: { "Content-Type": "application/json" } }
+                );
+            } catch (e) {
+                return new Response(JSON.stringify({ success: false, error: "Bad request" }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+        }
+
         if (env.ASSETS) {
             return env.ASSETS.fetch(request);
         }
