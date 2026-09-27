@@ -1,10 +1,10 @@
 {
-  "name": "predictor-visionclassify",
+  "name": "vision-ai",
   "version": "1.0.0",
   "private": true,
   "description": "PREDICTOR (VisionClassify) — AI Image Classification Web Application",
   "scripts": {
-    "build": "echo \"Using pre-built dist/ directory for Cloudflare Pages\"",
-    "deploy": "npx wrangler pages deploy dist --project-name predictor-visionclassify"
+    "build": "echo \"Build ready: serving ./dist and worker.js\"",
+    "deploy": "npx wrangler deploy"
   }
 }
